@@ -1,0 +1,9 @@
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Soberanía Contable ARCHEION 🌌')
+  .addItem('🔹 Calcular Impuestos del Mes', 'calcularImpuestos')
+  .addItem('🔹 Generar Pólizas Automáticas', 'generarPolizas')
+  .addItem('🔹 Clasificar Cuentas SAT Automáticamente', 'clasificarCuentas')
+  .addItem('🔹 Insertar Notas Explicativas', 'insertarNotas')
+  .addItem('🔹 Exportar Estado de Resultados', 'exportarResultadosPDF')
+  .addToUi();
+}
