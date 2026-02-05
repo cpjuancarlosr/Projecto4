@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal Capture Console</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f7f7f8; }
+    header { margin-bottom: 16px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    label { display: block; font-weight: 600; margin: 8px 0 4px; }
+    input, select, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+    button { background: #111827; color: white; border: none; padding: 12px 16px; border-radius: 8px; width: 100%; font-weight: 600; }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    .status { font-size: 12px; color: #6b7280; margin-top: 8px; }
+    .results { max-height: 240px; overflow: auto; font-size: 12px; background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Universal Capture Console</h1>
+    <div class="status" id="status">Ready.</div>
+  </header>
+
+  <div class="card">
+    <label>Capture Type</label>
+    <select id="captureType" onchange="updateForm()">
+      <option value="note">Note</option>
+      <option value="task">Task</option>
+      <option value="calendar">Calendar Event</option>
+      <option value="financial">Financial Movement</option>
+      <option value="treasure">Knowledge Treasure</option>
+      <option value="email">Email Log</option>
+    </select>
+
+    <label>Entity ID</label>
+    <input id="entityId" placeholder="entity_default">
+
+    <label>Text / Description</label>
+    <textarea id="payloadText" rows="4" placeholder="Capture in natural language..."></textarea>
+
+    <div id="dynamicFields"></div>
+
+    <button onclick="submitCapture()">Capture</button>
+  </div>
+
+  <div class="card">
+    <h2>Query Data</h2>
+    <label>Table</label>
+    <select id="queryTable">
+      <option value="raw_events">raw_events</option>
+      <option value="notes">notes</option>
+      <option value="tasks">tasks</option>
+      <option value="calendar_events">calendar_events</option>
+      <option value="financial_movements">financial_movements</option>
+      <option value="emails_log">emails_log</option>
+      <option value="entities">entities</option>
+      <option value="knowledge_treasure">knowledge_treasure</option>
+    </select>
+
+    <label>Filter (JSON)</label>
+    <textarea id="queryFilters" rows="2" placeholder='{"entity_id":"entity_default"}'></textarea>
+
+    <label>Limit</label>
+    <input id="queryLimit" type="number" value="25">
+
+    <button onclick="runQuery()">Run Query</button>
+    <div class="status" id="queryStatus"></div>
+    <pre class="results" id="queryResults"></pre>
+  </div>
+
+  <script>
+    const dynamicFields = document.getElementById('dynamicFields');
+    const statusEl = document.getElementById('status');
+
+    function updateForm() {
+      const type = document.getElementById('captureType').value;
+      dynamicFields.innerHTML = '';
+
+      if (type === 'task') {
+        dynamicFields.innerHTML = `
+          <label>Due Date</label>
+          <input id="dueDate" type="date">
+          <label>Priority</label>
+          <select id="priority">
+            <option value="normal">Normal</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+        `;
+      }
+
+      if (type === 'calendar') {
+        dynamicFields.innerHTML = `
+          <label>Start</label>
+          <input id="startTime" type="datetime-local">
+          <label>End</label>
+          <input id="endTime" type="datetime-local">
+          <label>Location</label>
+          <input id="location" type="text">
+        `;
+      }
+
+      if (type === 'financial') {
+        dynamicFields.innerHTML = `
+          <label>Amount</label>
+          <input id="amount" type="number" step="0.01">
+          <label>Currency</label>
+          <input id="currency" type="text" value="MXN">
+          <label>Movement Type</label>
+          <select id="movementType">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+          <label>Category</label>
+          <input id="category" type="text">
+        `;
+      }
+
+      if (type === 'email') {
+        dynamicFields.innerHTML = `
+          <label>To</label>
+          <input id="emailTo" type="email">
+          <label>CC</label>
+          <input id="emailCc" type="email">
+          <label>Subject</label>
+          <input id="emailSubject" type="text">
+        `;
+      }
+    }
+
+    function submitCapture() {
+      const type = document.getElementById('captureType').value;
+      const entityId = document.getElementById('entityId').value || 'entity_default';
+      const text = document.getElementById('payloadText').value;
+      const payload = {
+        intent: type,
+        entity_id: entityId,
+        source: 'html',
+        device: 'web',
+        text: text,
+        data: {}
+      };
+
+      if (type === 'task') {
+        payload.data.due_date = document.getElementById('dueDate').value;
+        payload.priority = document.getElementById('priority').value;
+      }
+
+      if (type === 'calendar') {
+        payload.data.start_time = document.getElementById('startTime').value;
+        payload.data.end_time = document.getElementById('endTime').value;
+        payload.data.location = document.getElementById('location').value;
+      }
+
+      if (type === 'financial') {
+        payload.data.amount = document.getElementById('amount').value;
+        payload.data.currency = document.getElementById('currency').value;
+        payload.data.movement_type = document.getElementById('movementType').value;
+        payload.data.category = document.getElementById('category').value;
+      }
+
+      if (type === 'email') {
+        payload.data.to = document.getElementById('emailTo').value;
+        payload.data.cc = document.getElementById('emailCc').value;
+        payload.data.subject = document.getElementById('emailSubject').value;
+      }
+
+      statusEl.textContent = 'Sending...';
+      fetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(response => response.json())
+        .then(data => {
+          statusEl.textContent = 'Captured: ' + JSON.stringify(data);
+        })
+        .catch(err => {
+          statusEl.textContent = 'Error: ' + err.message;
+        });
+    }
+
+    function runQuery() {
+      const table = document.getElementById('queryTable').value;
+      const filtersRaw = document.getElementById('queryFilters').value;
+      const limit = parseInt(document.getElementById('queryLimit').value, 10);
+      let filters = {};
+      if (filtersRaw) {
+        try {
+          filters = JSON.parse(filtersRaw);
+        } catch (err) {
+          document.getElementById('queryStatus').textContent = 'Invalid JSON filters.';
+          return;
+        }
+      }
+
+      const payload = {
+        action: 'query',
+        table,
+        filters,
+        limit
+      };
+
+      document.getElementById('queryStatus').textContent = 'Running...';
+      fetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('queryStatus').textContent = 'Done.';
+          document.getElementById('queryResults').textContent = JSON.stringify(data.data || data, null, 2);
+        })
+        .catch(err => {
+          document.getElementById('queryStatus').textContent = 'Error: ' + err.message;
+        });
+    }
+
+    updateForm();
+  </script>
+</body>
+</html>
