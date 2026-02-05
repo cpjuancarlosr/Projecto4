@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <style>
+      body { max-width: 720px; margin: 0 auto; }
+      .card { padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 12px; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .row > * { flex: 1 1 120px; }
+      textarea { min-height: 90px; }
+    </style>
+  </head>
+  <body>
+    <h2>Universal Capture Hub</h2>
+    <div class="card">
+      <h3>Fast Capture</h3>
+      <div class="row">
+        <select id="captureType">
+          <option value="note">Note</option>
+          <option value="task">Task</option>
+          <option value="money">Money</option>
+          <option value="calendar">Calendar</option>
+          <option value="treasure">Treasure</option>
+          <option value="email">Email</option>
+        </select>
+        <input id="entityId" placeholder="Entity ID">
+        <input id="priority" placeholder="Priority (high/medium/low)">
+      </div>
+      <textarea id="captureText" placeholder="Capture text"></textarea>
+      <button onclick="sendCapture()">Capture</button>
+      <div id="captureStatus"></div>
+    </div>
+
+    <div class="card">
+      <h3>Query Engine</h3>
+      <div class="row">
+        <select id="queryTable">
+          <option value="notes">Notes</option>
+          <option value="tasks">Tasks</option>
+          <option value="financial_movements">Financial Movements</option>
+          <option value="calendar_events">Calendar Events</option>
+          <option value="knowledge_treasure">Knowledge Treasure</option>
+        </select>
+        <input id="queryFilter" placeholder="Filter (key=value)">
+        <input id="queryLimit" placeholder="Limit">
+      </div>
+      <button onclick="runQuery()">Run Query</button>
+      <pre id="queryResult"></pre>
+    </div>
+
+    <script>
+      const baseUrl = "<?= baseUrl ?>";
+      const secret = new URLSearchParams(window.location.search).get('secret') || '';
+
+      function sendCapture() {
+        const payload = {
+          action: 'capture',
+          secret,
+          data: {
+            text: document.getElementById('captureText').value,
+            intent: document.getElementById('captureType').value,
+            entity_id: document.getElementById('entityId').value,
+            priority: document.getElementById('priority').value,
+            source: 'web',
+            device: 'browser'
+          }
+        };
+        fetch(baseUrl, { method: 'post', body: JSON.stringify(payload) })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById('captureStatus').textContent = JSON.stringify(data);
+          })
+          .catch((error) => {
+            document.getElementById('captureStatus').textContent = error.message;
+          });
+      }
+
+      function runQuery() {
+        const filterInput = document.getElementById('queryFilter').value;
+        const filters = {};
+        if (filterInput.includes('=')) {
+          const [key, value] = filterInput.split('=').map((item) => item.trim());
+          filters[key] = value;
+        }
+        const payload = {
+          action: 'query',
+          secret,
+          query: {
+            table: document.getElementById('queryTable').value,
+            filters,
+            limit: Number(document.getElementById('queryLimit').value) || 20
+          }
+        };
+        fetch(baseUrl, { method: 'post', body: JSON.stringify(payload) })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById('queryResult').textContent = JSON.stringify(data, null, 2);
+          })
+          .catch((error) => {
+            document.getElementById('queryResult').textContent = error.message;
+          });
+      }
+    </script>
+  </body>
+</html>
