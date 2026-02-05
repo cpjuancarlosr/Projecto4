@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 16px;
+        background: #f6f7fb;
+        color: #1f2937;
+      }
+      .container {
+        max-width: 840px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 22px;
+        margin-bottom: 12px;
+      }
+      .card {
+        background: #fff;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+        color: #6b7280;
+      }
+      input, textarea, select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      button {
+        background: #111827;
+        color: #fff;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .row > div {
+        flex: 1 1 160px;
+      }
+      .status {
+        font-size: 12px;
+        color: #10b981;
+      }
+      .muted {
+        font-size: 12px;
+        color: #6b7280;
+      }
+      pre {
+        background: #111827;
+        color: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Universal Capture Console</h1>
+      <div class="card">
+        <label for="captureType">Tipo de captura</label>
+        <select id="captureType">
+          <option value="note">Nota</option>
+          <option value="task">Tarea</option>
+          <option value="money">Movimiento financiero</option>
+          <option value="treasure">Knowledge Treasure</option>
+          <option value="email">Email log</option>
+          <option value="calendar">Evento calendario</option>
+        </select>
+        <label for="captureText">Contenido</label>
+        <textarea id="captureText" rows="3" placeholder="Escribe rápido... /task llamar a proveedor | 2026-02-10 | alta"></textarea>
+        <div class="row">
+          <div>
+            <label for="entityId">Entidad</label>
+            <input id="entityId" placeholder="entity_id o nombre" />
+          </div>
+          <div>
+            <label for="priority">Prioridad</label>
+            <select id="priority">
+              <option value="alta">Alta</option>
+              <option value="media" selected>Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+          <div>
+            <label for="status">Estado</label>
+            <select id="status">
+              <option value="open" selected>Abierto</option>
+              <option value="done">Hecho</option>
+              <option value="archived">Archivado</option>
+            </select>
+          </div>
+        </div>
+        <button id="captureBtn">Capturar</button>
+        <div id="captureStatus" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>SQL-light Query</h2>
+        <div class="row">
+          <div>
+            <label for="queryTable">Tabla</label>
+            <select id="queryTable">
+              <option value="notes">notes</option>
+              <option value="tasks">tasks</option>
+              <option value="financial_movements">financial_movements</option>
+              <option value="knowledge_treasure">knowledge_treasure</option>
+              <option value="emails_log">emails_log</option>
+              <option value="calendar_events">calendar_events</option>
+            </select>
+          </div>
+          <div>
+            <label for="queryFilter">Filtro (campo:valor)</label>
+            <input id="queryFilter" placeholder="status:open" />
+          </div>
+          <div>
+            <label for="queryLimit">Límite</label>
+            <input id="queryLimit" value="25" />
+          </div>
+        </div>
+        <button id="queryBtn">Buscar</button>
+        <pre id="queryResult" class="muted">Esperando consulta...</pre>
+      </div>
+    </div>
+
+    <script>
+      const webAppUrl = '<?= webAppUrl ?>';
+
+      function parseFilter(input) {
+        if (!input) return {};
+        const parts = input.split(',');
+        return parts.reduce((acc, part) => {
+          const [key, value] = part.split(':');
+          if (key && value) {
+            acc[key.trim()] = value.trim();
+          }
+          return acc;
+        }, {});
+      }
+
+      async function sendCapture() {
+        const payload = {
+          intent: document.getElementById('captureType').value,
+          text: document.getElementById('captureText').value,
+          entity_id: document.getElementById('entityId').value,
+          priority: document.getElementById('priority').value,
+          status: document.getElementById('status').value,
+          source: 'web'
+        };
+        const response = await fetch(webAppUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        document.getElementById('captureStatus').textContent = `OK: ${data.intent} ${data.raw_event_id}`;
+        document.getElementById('captureText').value = '';
+      }
+
+      async function runQuery() {
+        const payload = {
+          action: 'query',
+          table: document.getElementById('queryTable').value,
+          filters: parseFilter(document.getElementById('queryFilter').value),
+          limit: document.getElementById('queryLimit').value
+        };
+        const response = await fetch(webAppUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        document.getElementById('queryResult').textContent = JSON.stringify(data.data, null, 2);
+      }
+
+      document.getElementById('captureBtn').addEventListener('click', sendCapture);
+      document.getElementById('queryBtn').addEventListener('click', runQuery);
+    </script>
+  </body>
+</html>
