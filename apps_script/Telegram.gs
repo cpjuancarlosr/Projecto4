@@ -1,9 +1,12 @@
 function doPost(e) {
   if (!e || !e.postData) {
-    return ContentService.createTextOutput('No payload');
+    return buildJsonResponse({ status: 'error', message: 'No payload' });
   }
 
-  const payload = JSON.parse(e.postData.contents);
+  const payload = parseJsonPayload(e.postData.contents);
+  if (!payload) {
+    return buildJsonResponse({ status: 'error', message: 'Invalid JSON payload' });
+  }
   if (payload && payload.message) {
     return handleTelegramUpdate(payload);
   }
@@ -12,7 +15,7 @@ function doPost(e) {
     return handleApiRequest(payload);
   }
 
-  return ContentService.createTextOutput('Unsupported payload');
+  return buildJsonResponse({ status: 'error', message: 'Unsupported payload' });
 }
 
 function handleTelegramUpdate(update) {

@@ -54,6 +54,14 @@
       const baseUrl = "<?= baseUrl ?>";
       const secret = new URLSearchParams(window.location.search).get('secret') || '';
 
+      function parseApiResponse(response) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return response.json();
+        }
+        return response.text().then((text) => ({ status: 'error', message: text }));
+      }
+
       function sendCapture() {
         const payload = {
           action: 'capture',
@@ -67,8 +75,12 @@
             device: 'browser'
           }
         };
-        fetch(baseUrl, { method: 'post', body: JSON.stringify(payload) })
-          .then((response) => response.json())
+        fetch(baseUrl, {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then((response) => parseApiResponse(response))
           .then((data) => {
             document.getElementById('captureStatus').textContent = JSON.stringify(data);
           })
@@ -93,8 +105,12 @@
             limit: Number(document.getElementById('queryLimit').value) || 20
           }
         };
-        fetch(baseUrl, { method: 'post', body: JSON.stringify(payload) })
-          .then((response) => response.json())
+        fetch(baseUrl, {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then((response) => parseApiResponse(response))
           .then((data) => {
             document.getElementById('queryResult').textContent = JSON.stringify(data, null, 2);
           })

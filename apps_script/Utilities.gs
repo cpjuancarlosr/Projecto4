@@ -83,3 +83,18 @@ function parseDate(value) {
   }
   return date.toISOString();
 }
+
+function buildJsonResponse(payload) {
+  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function parseJsonPayload(contents) {
+  if (!contents) {
+    return null;
+  }
+  try {
+    return JSON.parse(contents);
+  } catch (error) {
+    return null;
+  }
+}
