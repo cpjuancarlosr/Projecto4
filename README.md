@@ -12,6 +12,7 @@ This repository contains a production-ready Google Apps Script backend, Google S
 - `apps_script/` — Apps Script source code and HTML UI.
 - `docs/SCHEMA.md` — Database-style schema for Sheets.
 - `docs/SETUP_TELEGRAM.md` — Telegram bot setup.
+- `docs/CONFIGURATION.md` — Where to obtain Script Property values.
 - `docs/FLOW.md` — End-to-end data flow.
 
 ## Quick Start
@@ -23,6 +24,7 @@ This repository contains a production-ready Google Apps Script backend, Google S
    - `TELEGRAM_ALLOWED_CHAT_IDS`
    - `API_SHARED_SECRET`
    - `SPEECH_API_KEY`
+   (See `docs/CONFIGURATION.md` for where to obtain each value.)
 4. Run `initSchema()` once to create all tables.
 5. Deploy as a Web App for Telegram and HTML capture.
 

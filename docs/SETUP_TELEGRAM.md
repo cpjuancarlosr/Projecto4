@@ -8,6 +8,7 @@
    - `TELEGRAM_ALLOWED_CHAT_IDS` (comma-separated list)
    - `API_SHARED_SECRET` (optional shared secret for the web UI)
    - `SPEECH_API_KEY` (Google Cloud Speech-to-Text API key)
+   - See `docs/CONFIGURATION.md` for where to obtain each value.
 4. Register webhook:
    - `https://api.telegram.org/bot<token>/setWebhook?url=<web_app_url>`
 5. Send a message to the bot:
